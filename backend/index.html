@@ -16,92 +16,90 @@
 
   <script>
     const apiBase = "http://localhost:8080/todos";
+    const listEl = document.getElementById("todoList");
+    const inputEl = document.getElementById("todoInput");
 
+    // --- API 呼び出し ---
+    async function apiFetch(url, method = "GET", body = null) {
+      const options = { method, headers: { "Content-Type": "application/json" } };
+      if (body) options.body = JSON.stringify(body);
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`Failed ${method} ${url}`);
+      return res.ok ? res.json() : null;
+    }
+
+    // --- タスクリスト取得 ---
     async function fetchTodos() {
       try {
-        const res = await fetch(apiBase);
-        const todos = await res.json();
-        const list = document.getElementById("todoList");
-        list.innerHTML = "";
-        todos.forEach(todo => {
-          const li = document.createElement("li");
-
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.checked = todo.done;
-
-          checkbox.addEventListener("change", async () => {
-            await updateTodo(todo.id, { title: todo.title, done: checkbox.checked });
-            fetchTodos();
-          });
-
-          li.appendChild(checkbox);
-
-          const span = document.createElement("span");
-          span.textContent = " " + todo.title;
-          li.appendChild(span);
-
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "削除";
-          delBtn.style.marginLeft = "10px";
-          delBtn.addEventListener("click", async () => {
-            await deleteTodo(todo.id);
-            fetchTodos();
-          });
-          li.appendChild(delBtn);
-
-          list.appendChild(li);
-        });
+        const todos = await apiFetch(apiBase);
+        renderTodos(todos);
       } catch (err) {
         console.error(err);
       }
     }
 
-    fetchTodos();
+    // --- タスク描画 ---
+    function renderTodos(todos) {
+      listEl.innerHTML = "";
+      todos.forEach(todo => {
+        const li = document.createElement("li");
 
-    const form = document.getElementById("todoForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const input = document.getElementById("todoInput");
-      const newTodo = { title: input.value, done: false };
-
-      try {
-        const res = await fetch(apiBase, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newTodo)
-        });
-        if (res.ok) {
-          input.value = "";
+        // チェックボックス
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = todo.done;
+        checkbox.addEventListener("change", async () => {
+          await updateTodo(todo.id, { title: todo.title, done: checkbox.checked });
           fetchTodos();
-        } else {
-          console.error("Failed to add todo");
-        }
-      } catch (err) {
-        console.error(err);
-      }
+        });
+        li.appendChild(checkbox);
+
+        // タイトル
+        const span = document.createElement("span");
+        span.textContent = " " + todo.title;
+        li.appendChild(span);
+
+        // 削除ボタン
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "削除";
+        delBtn.style.marginLeft = "10px";
+        delBtn.addEventListener("click", async () => {
+          await deleteTodo(todo.id);
+          fetchTodos();
+        });
+        li.appendChild(delBtn);
+
+        listEl.appendChild(li);
+      });
+    }
+
+    // --- タスク追加 ---
+    async function addTodo(title) {
+      await apiFetch(apiBase, "POST", { title, done: false });
+      fetchTodos();
+    }
+
+    // --- タスク更新 ---
+    async function updateTodo(id, todo) {
+      await apiFetch(`${apiBase}/${id}`, "PUT", todo);
+    }
+
+    // --- タスク削除 ---
+    async function deleteTodo(id) {
+      await apiFetch(`${apiBase}/${id}`, "DELETE");
+    }
+
+    // --- イベント ---
+    document.getElementById("todoForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = inputEl.value.trim();
+      if (!title) return;
+      addTodo(title);
+      inputEl.value = "";
     });
 
-    async function updateTodo(id, updatedTodo) {
-      try {
-        const res = await fetch(`${apiBase}/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedTodo)
-        });
-        if (!res.ok) {
-          console.error("Failed to update todo");
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    
-    async function deleteTodo(id) {
-      try {
-        await fetch(`${apiBase}/${id}`, { method: "DELETE" });
-      } catch (err) { console.error(err); }
-    }
+    // 初期表示
+    fetchTodos();
   </script>
 </body>
 </html>
