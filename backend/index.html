@@ -25,7 +25,22 @@
         list.innerHTML = "";
         todos.forEach(todo => {
           const li = document.createElement("li");
-          li.textContent = todo.title + (todo.done ? " ✅" : "");
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = todo.done;
+
+          checkbox.addEventListener("change", async () => {
+            await updateTodo(todo.id, { title: todo.title, done: checkbox.checked });
+            fetchTodos();
+          });
+
+          li.appendChild(checkbox);
+
+          const span = document.createElement("span");
+          span.textContent = " " + todo.title;
+          li.appendChild(span);
+
           list.appendChild(li);
         });
       } catch (err) {
@@ -39,7 +54,7 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const input = document.getElementById("todoInput");
-      const newTodo = { title: input.value, done: false};
+      const newTodo = { title: input.value, done: false };
 
       try {
         const res = await fetch(apiBase, {
@@ -57,6 +72,21 @@
         console.error(err);
       }
     });
+
+    async function updateTodo(id, updatedTodo) {
+      try {
+        const res = await fetch(`${apiBase}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedTodo)
+        });
+        if (!res.ok) {
+          console.error("Failed to update todo");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
   </script>
 </body>
 </html>

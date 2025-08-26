@@ -31,6 +31,8 @@ func main() {
 
 	r.POST("/todos", createTodo)
 
+	r.PUT("/todos/:id", updateTodo)
+
 	r.Run(":8080")
 }
 
@@ -50,4 +52,23 @@ func createTodo(c *gin.Context) {
 	}
 	db.Create(&todo)
 	c.JSON(200, todo)
+}
+
+// PUT /todos/id
+func updateTodo(c *gin.Context) {
+    var todo Todo
+    id := c.Param("id")
+
+    if err := db.First(&todo, id).Error; err != nil {
+        c.JSON(404, gin.H{"error": "Todo not found"})
+        return
+    }
+
+    if err := c.ShouldBindJSON(&todo); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+
+    db.Save(&todo)
+    c.JSON(200, todo)
 }
