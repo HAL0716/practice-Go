@@ -1,22 +1,62 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-    <meta charset="UTF-8">
-    <title>Hello World from Go</title>
-    </head>
-    <body>
-    <h1 id="message">Loading...</h1>
+<head>
+  <meta charset="UTF-8">
+  <title>ToDo List</title>
+</head>
+<body>
+  <h1>ToDo List</h1>
 
-    <script>
-        // Goサーバーの /hello にアクセス
-        fetch("http://localhost:8080/hello")
-        .then(response => response.text())
-        .then(text => {
-            document.getElementById("message").textContent = text;
-        })
-        .catch(err => {
-            document.getElementById("message").textContent = "Error: " + err;
+  <form id="todoForm">
+    <input type="text" id="todoInput" placeholder="新しいタスク" required>
+    <button type="submit">追加</button>
+  </form>
+
+  <ul id="todoList"></ul>
+
+  <script>
+    const apiBase = "http://localhost:8080/todos";
+
+    async function fetchTodos() {
+      try {
+        const res = await fetch(apiBase);
+        const todos = await res.json();
+        const list = document.getElementById("todoList");
+        list.innerHTML = "";
+        todos.forEach(todo => {
+          const li = document.createElement("li");
+          li.textContent = todo.title + (todo.done ? " ✅" : "");
+          list.appendChild(li);
         });
-    </script>
-    </body>
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    fetchTodos();
+
+    const form = document.getElementById("todoForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("todoInput");
+      const newTodo = { title: input.value, done: false};
+
+      try {
+        const res = await fetch(apiBase, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newTodo)
+        });
+        if (res.ok) {
+          input.value = "";
+          fetchTodos();
+        } else {
+          console.error("Failed to add todo");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  </script>
+</body>
 </html>
