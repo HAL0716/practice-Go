@@ -41,6 +41,15 @@
           span.textContent = " " + todo.title;
           li.appendChild(span);
 
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "削除";
+          delBtn.style.marginLeft = "10px";
+          delBtn.addEventListener("click", async () => {
+            await deleteTodo(todo.id);
+            fetchTodos();
+          });
+          li.appendChild(delBtn);
+
           list.appendChild(li);
         });
       } catch (err) {
@@ -86,6 +95,12 @@
       } catch (err) {
         console.error(err);
       }
+    }
+    
+    async function deleteTodo(id) {
+      try {
+        await fetch(`${apiBase}/${id}`, { method: "DELETE" });
+      } catch (err) { console.error(err); }
     }
   </script>
 </body>

@@ -33,6 +33,8 @@ func main() {
 
 	r.PUT("/todos/:id", updateTodo)
 
+	r.DELETE("/todos/:id", deleteTodo)
+
 	r.Run(":8080")
 }
 
@@ -71,4 +73,18 @@ func updateTodo(c *gin.Context) {
 
     db.Save(&todo)
     c.JSON(200, todo)
+}
+
+// DELETE /todos/id
+func deleteTodo(c *gin.Context) {
+	var todo Todo
+	id := c.Param("id")
+
+	if err := db.First(&todo, id).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Todo not found"})
+		return
+	}
+
+	db.Delete(&todo)
+	c.JSON(200, gin.H{"message": "Todo deleted"})
 }
