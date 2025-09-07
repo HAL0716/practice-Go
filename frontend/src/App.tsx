@@ -1,35 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface Task {
+  id: number;
+  title: string;
+  completed: boolean;
 }
 
-export default App
+function App() {
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: 1, title: 'GoでAPIを作る', completed: false },
+    { id: 2, title: 'ReactのUIを実装する', completed: true },
+    { id: 3, title: 'Dockerで環境を整える', completed: false },
+  ]);
+
+  const toggleTask = (id: number) => {
+    setTasks(tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-2xl font-bold mb-4">タスク管理</h1>
+      <div className="space-y-2">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center justify-between p-3 bg-white rounded shadow">
+            <span className={task.completed ? 'line-through text-gray-400' : ''}>{task.title}</span>
+            <button
+              onClick={() => toggleTask(task.id)}
+              className={`px-3 py-1 rounded text-white ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
+            >
+              {task.completed ? '未完了にする' : '完了にする'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default App;
