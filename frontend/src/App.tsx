@@ -1,40 +1,61 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { createTask, deleteTask, fetchTasks, updateTask, type Task } from './api';
+import TaskInput from './components/TaskInput';
+import TaskList from './components/TaskList';
 
-interface Task {
-  id: number;
-  title: string;
-  completed: boolean;
-}
+// ========================
+// App
+// ========================
+export default function App() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [newTitle, setNewTitle] = useState('');
 
-function App() {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, title: 'GoでAPIを作る', completed: false },
-    { id: 2, title: 'ReactのUIを実装する', completed: true },
-    { id: 3, title: 'Dockerで環境を整える', completed: false },
-  ]);
+  useEffect(() => {
+    fetchTasks().then(setTasks).catch(console.error);
+  }, []);
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)));
-  };
+  const handleAdd = useCallback(async () => {
+    const title = newTitle.trim();
+    if (!title) return;
+
+    if (tasks.some((task) => task.title.trim().toLowerCase() === title.toLowerCase())) {
+      alert('同じタイトルのタスクは追加できません');
+      setNewTitle('');
+      return;
+    }
+
+    try {
+      const newTask = await createTask(title);
+      setTasks([...tasks, newTask]);
+      setNewTitle('');
+    } catch {
+      alert('タスクの追加に失敗しました');
+    }
+  }, [newTitle, tasks]);
+
+  const handleToggle = useCallback(async (taskId: number) => {
+    try {
+      const updatedTask = await updateTask(taskId);
+      setTasks((prev) => prev.map((task) => (task.ID === taskId ? updatedTask : task)));
+    } catch {
+      alert('タスクの更新に失敗しました');
+    }
+  }, []);
+
+  const handleDelete = useCallback(async (taskId: number) => {
+    try {
+      await deleteTask(taskId);
+      setTasks((prev) => prev.filter((task) => task.ID !== taskId));
+    } catch {
+      alert('タスクの削除に失敗しました');
+    }
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold mb-4">タスク管理</h1>
-      <div className="space-y-2">
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center justify-between p-3 bg-white rounded shadow">
-            <span className={task.completed ? 'line-through text-gray-400' : ''}>{task.title}</span>
-            <button
-              onClick={() => toggleTask(task.id)}
-              className={`px-3 py-1 rounded text-white ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
-            >
-              {task.completed ? '未完了にする' : '完了にする'}
-            </button>
-          </div>
-        ))}
-      </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
+      <h1 className="text-3xl font-bold mb-6">タスク管理</h1>
+      <TaskInput value={newTitle} onChange={setNewTitle} onAdd={handleAdd} />
+      <TaskList tasks={tasks} onToggle={handleToggle} onDelete={handleDelete} />
     </div>
   );
 }
-
-export default App;
